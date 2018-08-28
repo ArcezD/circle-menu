@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'CircleMenu'
-  s.version      = '3.1.0'
+  s.version      = '3.1.1.beta.1'
   s.summary      = 'Amazing animation with buttons'
   s.homepage     = 'https://github.com/ArcezD/gm-circle-menu-ios'
   s.license      = 'MIT'
