@@ -37,6 +37,13 @@ func customize<Type>(_ value: Type, block: (_ object: Type) -> Void) -> Type {
  *  CircleMenuDelegate
  */
 @objc public protocol CircleMenuDelegate {
+    
+    /**
+     Tells the delegate that the mainButton was pressed for main action
+     
+     - parameter circleMenu: A circle menu object informing the delegate about the new index selection.
+     */
+    @objc optional func mainButtonPressed(_ circleMenu: CircleMenu)
 
     /**
      Tells the delegate the circle menu is about to draw a button for a particular index.
@@ -97,11 +104,11 @@ open class CircleMenu: UIButton {
     open var subButtonsRadius: CGFloat?
     
     // Show buttons event
-    open var showButtonsEvent: UIControlEvents = UIControlEvents.touchUpInside {
+    /*open var showButtonsEvent: UIControlEvents = UIControlEvents.touchUpInside {
         didSet {
             addActions(newEvent: showButtonsEvent, oldEvent: oldValue)
         }
-    }
+    }*/
 
     /// The object that acts as the delegate of the circle menu.
     @IBOutlet open weak var delegate: AnyObject? // CircleMenuDelegate?
@@ -154,7 +161,8 @@ open class CircleMenu: UIButton {
     }
 
     fileprivate func commonInit() {
-        addActions(newEvent: showButtonsEvent)
+        //addActions(newEvent: showButtonsEvent)
+        addActions()
 
         customNormalIconView = addCustomImageView(state: .normal)
 
@@ -294,9 +302,20 @@ open class CircleMenu: UIButton {
 
     // MARK: configure
 
-    fileprivate func addActions(newEvent: UIControlEvents, oldEvent: UIControlEvents? = nil) {
-        if let oldEvent = oldEvent { removeTarget(self, action: #selector(CircleMenu.onTap), for: oldEvent) }
-        addTarget(self, action: #selector(CircleMenu.onTap), for: newEvent)
+    fileprivate func addActions() {
+    //fileprivate func addActions(newEvent: UIControlEvents, oldEvent: UIControlEvents? = nil) {
+        /*if let oldEvent = oldEvent { removeTarget(self, action: #selector(CircleMenu.onTap), for: oldEvent) }
+        addTarget(self, action: #selector(CircleMenu.onTap), for: newEvent)*/
+        
+        // Add tap GestureRecognizer
+        let singleTap = UITapGestureRecognizer(target: self, action: #selector(CircleMenu.onTap))
+        singleTap.numberOfTapsRequired = 1
+        self.addGestureRecognizer(singleTap)
+        
+        // AddLongPress GestureRecognizer
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(CircleMenu.onLongPress))
+        longPress.minimumPressDuration = 1
+        self.addGestureRecognizer(longPress)
     }
 
     /**
@@ -320,8 +339,21 @@ open class CircleMenu: UIButton {
     // MARK: actions
     
     private var isBounceAnimating: Bool = false
-
+    
     @objc func onTap() {
+        if buttonsIsShown() {
+            let isShow = !buttonsIsShown()
+            let duration = isShow ? 0.5 : 0.2
+            buttonsAnimationIsShow(isShow: isShow, duration: duration)
+            
+            tapBounceAnimation(duration: 0.5) { [weak self] _ in self?.isBounceAnimating = false }
+            tapRotatedAnimation(0.3, isSelected: isShow)
+        } else {
+            self.delegate?.mainButtonPressed?(self)
+        }
+    }
+
+    @objc func onLongPress() {
         guard isBounceAnimating == false else { return }
         isBounceAnimating = true
 
